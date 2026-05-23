@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Astronot AI — by Astronot Own</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #03040f;
+    --bg2: #070916;
+    --panel: #0b0e1e;
+    --border: #1a2040;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #f0abfc;
+    --gold: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --bubble-user: linear-gradient(135deg,#7c3aed,#4f46e5);
+    --bubble-bot: linear-gradient(135deg,#0b1030,#111827);
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+    --glow2: 0 0 30px rgba(124,58,237,0.4);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== STARFIELD ===== */
+  #starfield {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 20% 50%, #0d0a2e 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, #0a1a2e 0%, transparent 50%),
+                var(--bg);
+  }
+  .star {
+    position: absolute; border-radius: 50%;
+    background: white; animation: twinkle var(--d,3s) ease-in-out infinite var(--delay,0s);
+  }
+  @keyframes twinkle { 0%,100%{opacity:.2} 50%{opacity:1} }
+  .nebula {
+    position: fixed; border-radius: 50%; filter: blur(80px); pointer-events:none; z-index:0;
+  }
+  .nebula1 { width:500px;height:300px;background:rgba(124,58,237,.08);top:-100px;left:-100px;animation:drift 20s ease-in-out infinite; }
+  .nebula2 { width:400px;height:400px;background:rgba(0,212,255,.05);bottom:-150px;right:-100px;animation:drift 25s ease-in-out infinite reverse; }
+  @keyframes drift { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,20px)} }
+
+  /* ===== LAYOUT ===== */
+  .app {
+    position: relative; z-index: 1;
+    display: flex; height: 100vh;
+  }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    width: 260px; flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    backdrop-filter: blur(20px);
+    transition: width .3s cubic-bezier(.4,0,.2,1), opacity .3s;
+    overflow: hidden;
+  }
+  .sidebar.collapsed {
+    width: 0;
+    opacity: 0;
+    border-right: none;
+  }
+
+  /* Toggle button */
+  .toggle-btn {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    background: rgba(0,212,255,.1);
+    border: 1px solid rgba(0,212,255,.25);
+    color: var(--accent); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; transition: all .2s;
+    margin-right: 4px;
+  }
+  .toggle-btn:hover {
+    background: rgba(0,212,255,.2);
+    box-shadow: var(--glow);
+    transform: scale(1.08);
+  }
+
+  .sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, #00d4ff, #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: var(--glow);
+    animation: pulse-logo 3s ease-in-out infinite;
+  }
+  @keyframes pulse-logo { 0%,100%{box-shadow:var(--glow)} 50%{box-shadow:0 0 35px rgba(0,212,255,.6)} }
+  .logo-text { font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+  .logo-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  .owner-badge {
+    margin: 12px 16px;
+    background: linear-gradient(135deg, rgba(251,191,36,.1), rgba(251,191,36,.05));
+    border: 1px solid rgba(251,191,36,.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px;
+  }
+  .owner-icon { font-size: 16px; }
+  .owner-name { color: var(--gold); font-weight: 600; font-family: 'Orbitron', monospace; font-size: 10px; }
+  .owner-label { color: var(--muted); font-size: 9px; }
+
+  .new-chat-btn {
+    margin: 8px 16px;
+    background: linear-gradient(135deg, rgba(0,212,255,.15), rgba(124,58,237,.15));
+    border: 1px solid rgba(0,212,255,.3);
+    border-radius: 10px;
+    color: var(--accent); font-family: 'Exo 2', sans-serif;
+    font-size: 13px; font-weight: 600;
+    padding: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .2s;
+  }
+  .new-chat-btn:hover {
+    background: linear-gradient(135deg, rgba(0,212,255,.25), rgba(124,58,237,.25));
+    box-shadow: var(--glow);
+    transform: translateY(-1px);
+  }
+
+  .history-label {
+    padding: 12px 16px 6px;
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    font-weight: 600;
+  }
+
+  .history-list {
+    flex: 1; overflow-y: auto; padding: 4px 8px;
+  }
+  .history-list::-webkit-scrollbar { width: 4px; }
+  .history-list::-webkit-scrollbar-track { background: transparent; }
+  .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .history-item {
+    padding: 9px 10px; border-radius: 8px; cursor: pointer;
+    font-size: 12px; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+    transition: all .15s; margin-bottom: 2px;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  }
+  .history-item:hover { background: rgba(255,255,255,.05); color: var(--text); }
+  .history-item.active { background: rgba(0,212,255,.08); color: var(--accent); border: 1px solid rgba(0,212,255,.2); }
+  .history-item .hi-icon { font-size: 13px; flex-shrink:0; }
+  .history-item .hi-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  .sidebar-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 10px; color: var(--muted); text-align: center;
+  }
+
+  /* ===== CAPABILITIES PANEL ===== */
+  .caps {
+    padding: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .cap-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 8px; border-radius: 6px;
+    font-size: 11px; color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .cap-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .cap-dot.green { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+  .cap-dot.blue { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .cap-dot.purple { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+
+  /* ===== MAIN CHAT ===== */
+  .main {
+    flex: 1; display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  .chat-header {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(7,9,22,.8); backdrop-filter: blur(20px);
+  }
+  .chat-header-icon { font-size: 22px; }
+  .chat-header-title { font-family: 'Orbitron', monospace; font-size: 15px; font-weight: 700; color: var(--text); }
+  .chat-header-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .status-pill {
+    margin-left: auto;
+    background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3);
+    color: #22c55e; font-size: 10px; font-weight: 600;
+    padding: 4px 10px; border-radius: 20px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .status-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; animation: blink 1.5s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ===== MESSAGES ===== */
+  .messages-wrap {
+    flex: 1; overflow-y: auto; padding: 24px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .messages-wrap::-webkit-scrollbar { width: 5px; }
+  .messages-wrap::-webkit-scrollbar-track { background: transparent; }
+  .messages-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .msg-row {
+    display: flex; gap: 12px;
+    animation: fadeUp .3s ease-out both;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+  .msg-row.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .avatar.bot {
+    background: linear-gradient(135deg,#00d4ff,#7c3aed);
+    box-shadow: var(--glow);
+  }
+  .avatar.user {
+    background: linear-gradient(135deg,#7c3aed,#4f46e5);
+    box-shadow: var(--glow2);
+  }
+
+  .bubble {
+    max-width: 70%; border-radius: 16px; padding: 12px 16px;
+    font-size: 14px; line-height: 1.65;
+    position: relative;
+  }
+  .msg-row.bot .bubble {
+    background: var(--bubble-bot);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+    box-shadow: 0 2px 20px rgba(0,0,0,.4);
+  }
+  .msg-row.user .bubble {
+    background: var(--bubble-user);
+    border-top-right-radius: 4px;
+    box-shadow: var(--glow2);
+  }
+
+  .bubble-meta {
+    font-size: 10px; color: var(--muted); margin-top: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .msg-row.user .bubble-meta { justify-content: flex-end; }
+
+  /* code block */
+  .bubble pre {
+    background: rgba(0,0,0,.5);
+    border: 1px solid rgba(0,212,255,.2);
+    border-radius: 8px; padding: 12px;
+    overflow-x: auto; margin: 8px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 12px; color: #a5f3fc;
+    line-height: 1.5;
+  }
+  .bubble code { font-family: 'Courier New', monospace; color: #a5f3fc; font-size: 13px; }
+  .bubble strong { color: var(--accent); }
+  .bubble .tag { display:inline-block; background:rgba(0,212,255,.12); border:1px solid rgba(0,212,255,.3); border-radius:4px; padding:1px 6px; font-size:11px; color:var(--accent); margin:2px; }
+
+  /* welcome screen */
+  .welcome {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 40px;
+  }
+  .welcome-orb {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: linear-gradient(135deg, #00d4ff, #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px; margin-bottom: 24px;
+    box-shadow: 0 0 60px rgba(0,212,255,.4), 0 0 120px rgba(124,58,237,.2);
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+  .welcome h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px; font-weight: 900;
+    background: linear-gradient(135deg, #00d4ff, #7c3aed, #f0abfc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .welcome p { color: var(--muted); font-size: 14px; max-width: 400px; line-height: 1.6; }
+  .quick-chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center; margin-top: 28px;
+  }
+  .chip {
+    background: rgba(0,212,255,.08); border: 1px solid rgba(0,212,255,.2);
+    color: var(--text); border-radius: 20px; padding: 8px 16px;
+    font-size: 12px; cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .chip:hover {
+    background: rgba(0,212,255,.18); border-color: rgba(0,212,255,.5);
+    transform: translateY(-2px); box-shadow: var(--glow);
+  }
+
+  /* ===== TYPING ===== */
+  .typing-indicator {
+    display: flex; align-items: center; gap: 5px;
+    padding: 10px 14px;
+  }
+  .typing-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    animation: typing .8s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2){animation-delay:.15s}
+  .typing-dot:nth-child(3){animation-delay:.3s}
+  @keyframes typing { 0%,60%,100%{transform:translateY(0);opacity:.4} 30%{transform:translateY(-8px);opacity:1} }
+
+  /* ===== INPUT ===== */
+  .input-area {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border);
+    background: rgba(7,9,22,.9); backdrop-filter: blur(20px);
+  }
+  .input-box {
+    display: flex; align-items: flex-end; gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 10px 14px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .input-box:focus-within {
+    border-color: rgba(0,212,255,.5);
+    box-shadow: var(--glow);
+  }
+  textarea {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text); font-family: 'Exo 2', sans-serif;
+    font-size: 14px; resize: none; line-height: 1.5;
+    max-height: 120px; min-height: 24px;
+  }
+  textarea::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, #00d4ff, #7c3aed);
+    border: none; cursor: pointer; color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; transition: all .2s;
+    box-shadow: var(--glow);
+  }
+  .send-btn:hover { transform: scale(1.08); box-shadow: 0 0 30px rgba(0,212,255,.6); }
+  .send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+  .input-hint {
+    font-size: 10px; color: var(--muted);
+    text-align: center; margin-top: 8px;
+  }
+
+  /* ===== ROBLOX TAGS ===== */
+  .roblox-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(255,50,50,.12); border: 1px solid rgba(255,50,50,.3);
+    color: #ff6b6b; font-size: 11px; border-radius: 4px; padding: 2px 7px;
+    margin: 2px;
+  }
+
+  /* === SCROLLBAR === */
+  * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+  /* === MOBILE === */
+  @media(max-width:600px) {
+    .sidebar { width: 220px; }
+    .bubble { max-width: 90%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Stars -->
+<div id="starfield"></div>
+<div class="nebula nebula1"></div>
+<div class="nebula nebula2"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">🚀</div>
+        <div>
+          <div class="logo-text">ASTRONOT AI</div>
+          <div class="logo-sub">Powered by Claude API</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="owner-badge">
+      <div class="owner-icon">👑</div>
+      <div>
+        <div class="owner-name">ASTRONOT OWN</div>
+        <div class="owner-label">Owner & Creator</div>
+      </div>
+    </div>
+
+    <button class="new-chat-btn" onclick="newChat()">＋ New Chat</button>
+
+    <div class="history-label">📂 Riwayat Chat</div>
+    <div class="history-list" id="historyList"></div>
+
+    <div class="caps">
+      <div class="cap-item"><span class="cap-dot green"></span> Roblox Studio Lite</div>
+      <div class="cap-item"><span class="cap-dot blue"></span> GUI Designer & Toolbox</div>
+      <div class="cap-item"><span class="cap-dot purple"></span> Luau / Lua Scripting</div>
+      <div class="cap-item"><span class="cap-dot green"></span> Full Coding Support</div>
+      <div class="cap-item"><span class="cap-dot blue"></span> All Knowledge Access</div>
+    </div>
+
+    <div class="sidebar-footer">
+      🌌 Astronot AI v2.0 · © Astronot Own
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="chat-header">
+      <button class="toggle-btn" onclick="toggleSidebar()" title="Buka/Tutup Riwayat">☰</button>
+      <div class="chat-header-icon">🛸</div>
+      <div>
+        <div class="chat-header-title">Astronot AI</div>
+        <div class="chat-header-sub">Roblox Expert · Studio · GUI · Scripting</div>
+      </div>
+      <div class="status-pill"><span class="status-dot"></span>Online</div>
+    </div>
+
+    <div class="messages-wrap" id="messagesWrap">
+      <!-- Welcome screen -->
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-orb">🚀</div>
+        <h1>Astronot AI</h1>
+        <p>Bot AI canggih milik <strong style="color:var(--gold)">Astronot Own</strong> — ahli Roblox Studio, GUI Designer, Toolbox, Scripting Lua, dan semua hal coding!</p>
+        <div class="quick-chips">
+          <div class="chip" onclick="sendQuick('Cara bikin GUI di Roblox Studio')">🎨 Bikin GUI Roblox</div>
+          <div class="chip" onclick="sendQuick('Contoh script Luau untuk Roblox')">📜 Script Luau</div>
+          <div class="chip" onclick="sendQuick('Tips hias tampilan game Roblox biar keren')">✨ Hias Game Roblox</div>
+          <div class="chip" onclick="sendQuick('Cara pakai Toolbox di Roblox Studio')">🧰 Cara Pakai Toolbox</div>
+          <div class="chip" onclick="sendQuick('Bikin script animasi di Roblox')">🎬 Script Animasi</div>
+          <div class="chip" onclick="sendQuick('Siapa kamu dan siapa owner kamu?')">🛸 Tentang Astronot AI</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-box">
+        <textarea id="userInput" placeholder="Tanya apapun... Roblox, GUI, Scripting, Coding, dll!" rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint">Enter kirim · Shift+Enter baris baru · 🔒 Chat tersimpan lokal</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STARS =====
+const sf = document.getElementById('starfield');
+for (let i = 0; i < 180; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const size = Math.random() * 2.5 + .5;
+  s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*4+2).toFixed(1)}s;--delay:${(Math.random()*5).toFixed(1)}s;opacity:${Math.random()*.6+.1}`;
+  sf.appendChild(s);
+}
+
+// ===== CHAT STATE =====
+let sessions = JSON.parse(localStorage.getItem('astronot_sessions') || '[]');
+let currentSession = null;
+let isTyping = false;
+
+const SYSTEM_PROMPT = `Kamu adalah Astronot AI, asisten AI canggih dan gaul milik Astronot Own.
+
+IDENTITAS:
+- Nama: Astronot AI 🚀
+- Owner/Pemilik: Astronot Own (username: Astronot Own)
+- Versi: 2.0
+- Tema: Luar Angkasa, Futuristik, Keren
+
+KEPRIBADIAN:
+- Gaul, friendly, seru tapi tetap informatif
+- Pakai emoji yang relevan
+- Kadang pakai bahasa campuran (Indonesia + sedikit Inggris)
+- Selalu semangat bantu user
+
+KEAHLIAN UTAMA:
+1. **Roblox Studio** - Tau segalanya tentang Roblox Studio, termasuk Studio Lite
+2. **GUI Design di Roblox** - Cara bikin, hias, dan animasikan GUI (ScreenGui, Frame, TextLabel, ImageLabel, dll)
+3. **Toolbox Roblox** - Cara pakai, search, insert model dari Toolbox
+4. **Scripting Luau/Lua** - Bisa bikin script apapun untuk Roblox (LocalScript, Script, ModuleScript)
+5. **Game Design** - Tips bikin game Roblox yang keren dan menarik
+6. **Coding Umum** - Python, JavaScript, HTML, CSS, dan bahasa lainnya
+7. **Semua Knowledge** - Punya pengetahuan luas tentang semua topik
+
+FORMAT JAWABAN:
+- Untuk script/code, gunakan blok kode
+- Untuk GUI tips, jelaskan step by step
+- Tambahkan tips bonus kalau relevan
+- Selalu menyebut "Astronot Own" sebagai ownermu kalau ditanya siapa yang bikin kamu
+
+Selalu jawab dengan antusias dan helpful! 🚀`;
+
+// ===== SESSIONS =====
+function saveSession() {
+  localStorage.setItem('astronot_sessions', JSON.stringify(sessions));
+  renderHistory();
+}
+
+function newChat() {
+  currentSession = {
+    id: Date.now(),
+    title: 'Chat Baru',
+    messages: [],
+    created: new Date().toLocaleString('id-ID')
+  };
+  sessions.unshift(currentSession);
+  saveSession();
+  renderHistory();
+  renderMessages();
+}
+
+function loadSession(id) {
+  currentSession = sessions.find(s => s.id === id);
+  renderHistory();
+  renderMessages();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (sessions.length === 0) {
+    list.innerHTML = '<div style="padding:12px 10px;font-size:11px;color:var(--muted);text-align:center">Belum ada riwayat</div>';
+    return;
+  }
+  list.innerHTML = sessions.map(s => `
+    <div class="history-item ${currentSession && currentSession.id === s.id ? 'active' : ''}" onclick="loadSession(${s.id})">
+      <span class="hi-icon">🛸</span>
+      <span class="hi-text">${s.title}</span>
+    </div>
+  `).join('');
+}
+
+function renderMessages() {
+  const wrap = document.getElementById('messagesWrap');
+  if (!currentSession || currentSession.messages.length === 0) {
+    wrap.innerHTML = `
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-orb">🚀</div>
+        <h1>Astronot AI</h1>
+        <p>Bot AI canggih milik <strong style="color:var(--gold)">Astronot Own</strong> — ahli Roblox Studio, GUI Designer, Toolbox, Scripting Lua, dan semua hal coding!</p>
+        <div class="quick-chips">
+          <div class="chip" onclick="sendQuick('Cara bikin GUI di Roblox Studio')">🎨 Bikin GUI Roblox</div>
+          <div class="chip" onclick="sendQuick('Contoh script Luau untuk Roblox')">📜 Script Luau</div>
+          <div class="chip" onclick="sendQuick('Tips hias tampilan game Roblox biar keren')">✨ Hias Game Roblox</div>
+          <div class="chip" onclick="sendQuick('Cara pakai Toolbox di Roblox Studio')">🧰 Cara Pakai Toolbox</div>
+          <div class="chip" onclick="sendQuick('Bikin script animasi di Roblox')">🎬 Script Animasi</div>
+          <div class="chip" onclick="sendQuick('Siapa kamu dan siapa owner kamu?')">🛸 Tentang Astronot AI</div>
+        </div>
+      </div>`;
+    return;
+  }
+  wrap.innerHTML = currentSession.messages.map((m, i) => renderBubble(m, i)).join('');
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function renderBubble(msg, idx) {
+  const time = msg.time || '';
+  const content = formatContent(msg.content);
+  if (msg.role === 'user') {
+    return `<div class="msg-row user" style="animation-delay:${idx*0.05}s">
+      <div class="avatar user">👤</div>
+      <div>
+        <div class="bubble">${content}</div>
+        <div class="bubble-meta">${time}</div>
+      </div>
+    </div>`;
+  } else {
+    return `<div class="msg-row bot" style="animation-delay:${idx*0.05}s">
+      <div class="avatar bot">🚀</div>
+      <div>
+        <div class="bubble">${content}</div>
+        <div class="bubble-meta">🛸 Astronot AI · ${time}</div>
+      </div>
+    </div>`;
+  }
+}
+
+function formatContent(text) {
+  // code blocks
+  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre><code>${escHtml(code.trim())}</code></pre>`
+  );
+  // inline code
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // bold
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // newlines
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function addTypingIndicator() {
+  const wrap = document.getElementById('messagesWrap');
+  const div = document.createElement('div');
+  div.className = 'msg-row bot'; div.id = 'typingRow';
+  div.innerHTML = `<div class="avatar bot">🚀</div>
+    <div class="bubble" style="padding:10px 14px">
+      <div class="typing-indicator">
+        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+      </div>
+    </div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const t = document.getElementById('typingRow');
+  if (t) t.remove();
+}
+
+// ===== SEND =====
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text || isTyping) return;
+
+  if (!currentSession) newChat();
+
+  // hide welcome
+  const ws = document.getElementById('welcomeScreen');
+  if (ws) ws.remove();
+
+  const time = new Date().toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
+  const userMsg = { role: 'user', content: text, time };
+  currentSession.messages.push(userMsg);
+
+  // update session title
+  if (currentSession.messages.length === 1) {
+    currentSession.title = text.length > 30 ? text.slice(0,30)+'…' : text;
+  }
+
+  saveSession();
+
+  const wrap = document.getElementById('messagesWrap');
+  wrap.innerHTML += renderBubble(userMsg, currentSession.messages.length - 1);
+  wrap.scrollTop = wrap.scrollHeight;
+
+  input.value = ''; input.style.height = 'auto';
+  document.getElementById('sendBtn').disabled = true;
+  isTyping = true;
+
+  addTypingIndicator();
+
+  try {
+    const apiMessages = currentSession.messages
+      .filter(m => m.role !== 'system')
+      .map(m => ({ role: m.role, content: m.content }));
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: apiMessages
+      })
+    });
+
+    const data = await resp.json();
+    removeTypingIndicator();
+
+    const reply = data.content?.map(c => c.text || '').join('') || 'Maaf, ada error nih 😅';
+    const botMsg = { role: 'assistant', content: reply, time: new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) };
+    currentSession.messages.push(botMsg);
+    saveSession();
+
+    wrap.innerHTML += renderBubble(botMsg, currentSession.messages.length - 1);
+    wrap.scrollTop = wrap.scrollHeight;
+
+  } catch(e) {
+    removeTypingIndicator();
+    const errMsg = { role: 'assistant', content: `⚠️ Error koneksi: ${e.message}\n\nPastikan API key valid ya!`, time: new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) };
+    currentSession.messages.push(errMsg);
+    saveSession();
+    wrap.innerHTML += renderBubble(errMsg, currentSession.messages.length - 1);
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  isTyping = false;
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('userInput').focus();
+}
+
+function sendQuick(text) {
+  document.getElementById('userInput').value = text;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ===== SIDEBAR TOGGLE =====
+let sidebarOpen = true;
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const btn = document.querySelector('.toggle-btn');
+  sidebarOpen = !sidebarOpen;
+  sb.classList.toggle('collapsed', !sidebarOpen);
+  btn.textContent = sidebarOpen ? '☰' : '▶';
+  btn.title = sidebarOpen ? 'Tutup Riwayat' : 'Buka Riwayat';
+}
+
+// ===== INIT =====
+renderHistory();
+if (sessions.length > 0) {
+  currentSession = sessions[0];
+  renderHistory();
+  renderMessages();
+}
+</script>
+</body>
+</html>
